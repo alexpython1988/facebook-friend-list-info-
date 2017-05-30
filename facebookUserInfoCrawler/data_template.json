@@ -1,0 +1,59 @@
+[
+	{
+		"user_id" : "xi.yang.121",
+		
+		"info" : 
+		{
+			"attr1" : "111111",
+			"attr2" : "222222",
+			"attr3" : "333333"
+		},
+
+		"friend list" : 
+		[
+			{
+				"friend_id": "1",
+				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+			},
+
+			{
+				"friend_id": "1",
+				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+			},
+
+			{
+				"friend_id": "1",
+				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+			}
+		]
+	},
+
+	{
+		"user_id" : "xi.yang.121",
+		
+		"info" : 
+		{
+			"attr1" : "111111",
+			"attr2" : "222222"
+		},
+
+		"friend list" : 
+		[
+			{
+				"friend_id": "1",
+				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+			},
+
+			{
+				"friend_id": "1",
+				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+			},
+
+			{
+				"friend_id": "1",
+				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+			}
+		]
+	}
+
+]
