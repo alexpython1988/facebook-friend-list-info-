@@ -3,6 +3,8 @@ import config
 import time
 from bs4 import BeautifulSoup as bs
 import json
+import time
+from datetime import datetime
 
 #data strcuture to store information obtained
 friend_list = []
@@ -36,12 +38,8 @@ def crawler_config_and_login_account():
 	return browser
 
 def scrapy_friend_list_based_on_account(browser):
-	#go to friend lists
-	browser.find_element_by_link_text("Friend Lists").click()
-	browser.find_element_by_link_text("See All Friends").click()
-
 	i = 0
-	while(i < 15):
+	while(i < 30):
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 		time.sleep(1)
 		i += 1
@@ -76,26 +74,85 @@ def scrapy_friend_list_based_on_account(browser):
 				 		fid += id_url.split("?")[0]
 				 	#add data to json file
 
-def go_to_info_page_on_account(browser):
-	browser.find_element_by_id("userNav").click()
-	print(2)
+# def go_to_info_page_on_account(browser):
+# 	browser.find_element_by_id("userNav").click()
+# 	print(2)
+# 	return browser
+
+def handle_each_new_friend_in_list(browser):
+	#create a new tab
+	browser.execute_script("window.open('');")
+	browser.switch_to_window(browser.window_handles[-1])
+	browser.get("url here")
+
+	#get user info
+	scrapy_user_info(browser)
+
+	#get user friend list
+	scrapy_friend_list_of_friends(browser)
+
+	#close new tab and switch back to account
+	browser.close()
+	browser.switch_to_window(browser.window_handles[-1])
 	return browser
 
-def scrapy_user_info(browser):
-	print(1)
+def scrapy_user_info(browser, uid):
+	#go to about tab
+	browser.find_element_by_link_text("About").click()
+	#browser.find_element_by_xpath("//div[@class='_6_7 clearfix']/a[2]").click()
+	
+	#obtain information in each section: 
+	'''
+	Work and Education
+	Places Lived
+	contact and basic info
+	family and relationships
+	details about
+	''' 
+	for index in range(2, 7):
+		browser.find_element_by_xpath("//ul[@class='uiList _4kg']/li[{}]/a[@class='_5pwr']".format(index)).click()
+		get_info_of_user(browser)
+		time.sleep(5)
+
+	#change to log later
+	print("get info for {} at {}".format(uid, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+def get_info_of_user(browser):
+	#locate webElement id based on index
+	# element_id = ""
+	# if index == 2:
+	# 	element_id += "pagelet_eduwork"
+	# elif index == 3:
+	# 	element_id += "pagelet_hometown"
+	# elif index == 4:
+	# 	element_id += ""
+	# elif index == 5:
+	# 	element_id += ""
+	# elif index == 6:
+	# 	element_id += ""
+
+	#webElement.get_attribute("innnerHTML");
+	html_content = browser.find_element_by_id("u_0_3y")
+	soup = bs(html_content.get_attribute("innerHTML"))
+	
+
+def scrapy_friend_list_of_friends(browser):
+	browser.find_element_by_xpath("//div[@class='_6_7 clearfix']/a[3]").click()
+	scrapy_friend_list_based_on_account(browser)
+
 
 def main():
 	browser_1 = crawler_config_and_login_account()
+
+	#go to friend lists
+	browser_1.find_element_by_link_text("Friend Lists").click()
+	browser_1.find_element_by_link_text("See All Friends").click()
+
 	scrapy_friend_list_based_on_account(browser_1)
 	browser_1.back()
-	browser_2 = go_to_info_page_on_account(browser_1)
-	scrapy_user_info(browser_2)
-
-	#obtain info of other users
-
-	#create a new tab
-	browser_2.execute_script("window.open('');")
-	browser_2.get("url here")
+	
+	# browser_2 = go_to_info_page_on_account(browser_1)
+	# scrapy_user_info(browser_2)
 
 if __name__ == '__main__':
 	main()
