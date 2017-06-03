@@ -7,3 +7,5 @@ ACCOUNT = "alexgre@ufl.edu"
 PASSWORD = "alex1988"
 
 ID = "Xi Yang"
+
+MAX_NUMBER_OF_USER_TO_CRWAL = 5000

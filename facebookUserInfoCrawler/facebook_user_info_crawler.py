@@ -3,12 +3,13 @@ import config
 import time
 from bs4 import BeautifulSoup as bs
 import json
-import time
 from datetime import datetime
+from Helper import My_Queue
 
 #data strcuture to store information obtained
-friend_list = []
-friend_friends_url = dict()
+queue = My_Queue()
+friend_list = set()
+user_info_all = []
 
 def crawler_config_and_login_account():
 	# deactivate notifications from chrome
@@ -41,7 +42,7 @@ def scrapy_friend_list_based_on_account(browser):
 	i = 0
 	while(i < 30):
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-		time.sleep(1)
+		time.sleep(0.5)
 		i += 1
 
 	html = browser.page_source
@@ -73,6 +74,7 @@ def scrapy_friend_list_based_on_account(browser):
 				 	else:
 				 		fid += id_url.split("?")[0]
 				 	#add data to json file
+				 	#TODO
 
 # def go_to_info_page_on_account(browser):
 # 	browser.find_element_by_id("userNav").click()
@@ -83,13 +85,18 @@ def handle_each_new_friend_in_list(browser):
 	#create a new tab
 	browser.execute_script("window.open('');")
 	browser.switch_to_window(browser.window_handles[-1])
-	browser.get("url here")
+	#extract next url from list
 
-	#get user info
-	scrapy_user_info(browser)
+	next_url = queue.pop()
+
+	browser.get(next_url)
 
 	#get user friend list
 	scrapy_friend_list_of_friends(browser)
+	browser.back()
+
+	#get user info
+	scrapy_user_info(browser)
 
 	#close new tab and switch back to account
 	browser.close()
@@ -111,29 +118,142 @@ def scrapy_user_info(browser, uid):
 	''' 
 	for index in range(2, 7):
 		browser.find_element_by_xpath("//ul[@class='uiList _4kg']/li[{}]/a[@class='_5pwr']".format(index)).click()
-		get_info_of_user(browser)
-		time.sleep(5)
+		info = get_info_of_user(browser, index)
+		#process info collected with current user info
 
-	#change to log later
+	#change to log later for debug or check data purposes
 	print("get info for {} at {}".format(uid, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-def get_info_of_user(browser):
-	#locate webElement id based on index
-	# element_id = ""
-	# if index == 2:
-	# 	element_id += "pagelet_eduwork"
-	# elif index == 3:
-	# 	element_id += "pagelet_hometown"
-	# elif index == 4:
-	# 	element_id += ""
-	# elif index == 5:
-	# 	element_id += ""
-	# elif index == 6:
-	# 	element_id += ""
-
+def get_info_of_user(browser, index):
 	#webElement.get_attribute("innnerHTML");
-	html_content = browser.find_element_by_id("u_0_3y")
-	soup = bs(html_content.get_attribute("innerHTML"))
+	#obtain html source and add into beautifulsoup for process
+	html_source = browser.find_element_by_class_name("_4ms4")
+	soup = bs(html_source.get_attribute("innerHTML"))
+	divs = soup.find_all("div", class_ = "_4qm1")
+
+	#process html with beautifulsoup based on index(different page)
+	if index == 2:
+		#divs_2_1 = soup.find_all("div", class_ = "_4qm1")
+		for each_div_2_1 in divs:
+			#section title
+			title_text_2_1 = each_div_2_1.find("div", class_ = "clearfix _h71").text
+			#section content
+			divs_2_2 = each_div_2_1.find_all("div", class_ = "_2tdc")
+			#section might not contain any information
+			if (divs_2_2 is None) or (len(divs_2_2) == 0):
+				#add title and empty info to dataset
+				continue
+			else:
+				for each_div_2_2 in divs_2_2:
+					place_info_2 = each_div_2_2.find("div", class_ = "_2lzr _50f5 _50f7").text
+					details_2 = each_div_2_2.find("div", class_ = "fsm fwn fcg").text
+					#add information to section information
+
+	elif index == 3:
+		#divs_3_1 = soup.find_all("div", class_ = "_4qm1")
+		#handle number of divs_3_1 has been found
+		num = len(divs)
+		if num == 0:
+			#return no information
+			pass
+		elif num == 1:
+			#only process section 0
+			div_3_1a = divs[0].find("div", class_ = "clearfix _h71")
+			title_text_3_1a = div_3_1a.text
+			divs_3_1a = divs[0].find_all("div", class_ = "_4bl0")
+			if (divs_3_1a is None) or (len(divs_3_1a) == 0):
+				pass
+			else:
+				for each_div_3_1a in divs_3_1a:
+					loc_info_3_1a = each_div_3_1a.find("span", class_ = "_50f5 _50f7").text
+					detail_loc_3_1a = each_div_3_1a.find("div", class_ = "fsm fwn fcg").text
+					#process data with title
+		elif num == 2:
+			#process section 0 and 1
+			#section 0
+			div_3_1b = divs[0].find("div", class_ = "clearfix _h71")
+			title_text_3_1b = div_3_1b.text
+			divs_3_1b = divs[0].find_all("div", class_ = "_4bl0")
+			if (divs_3_1b is None) or (len(divs_3_1b) == 0):
+				pass
+			else:
+				for each_div_3_1b in divs_3_1b:
+					loc_info_3_1b = each_div_3_1b.find("span", class_ = "_50f5 _50f7").text
+					detail_loc_3_1b = each_div_3_1b.find("div", class_ = "fsm fwn fcg").text
+					#process data with title
+
+			#section 1
+			div_3_2 = divs[1].find("div", class_ = "clearfix _h71")
+			title_text_3_2 = div_3_2.text
+			divs_3_2 = divs[1].find_all("div", class_ = "_2tdc")
+			if (divs_3_2 is None) or (len(divs_3_2) == 0):
+				pass
+			else:
+				for each_div_3_2 in divs_3_2:
+					loc_info_3_2 = each_div_3_2.find("span", class_ = "_50f5 _50f7").text
+					detail_loc_3_2 = each_div_3_2.find("div", class_ = "fsm fwn fcg").text
+					#process data with title
+
+	elif index == 4:
+		#get information div, should be 2 of them
+		#divs_4_1 = soup.find_all("div", class_ = "_4qm1")
+		#process information in each div
+		for each_div_4_1 in divs:
+			#each div title
+			title_text_4_1 = each_div_4_1.find("div", class_="clearfix _h71").text
+			#list of info in each div
+			l_4 = []
+			divs_4_2 = each_div_4_1.find_all("div", class_ = "clearfix _ikh")
+			if (divs_4_2 is None) or (len(divs_4_2) == 0):
+				#save only title of the section
+				#TODO
+				continue
+			else:
+				for each_div_4_2 in divs_4_2:
+					key = each_div_4_2.find("div", class_ = "_4bl7 _3xdi _52ju").text
+					value = each_div_4_2.find("div", class_ = "clearfix").text
+					_temp_4 = dict()
+					_temp_4[key] = value
+					l_4.append(_temp_4) 
+					#add data with title info
+					
+	elif index == 5:
+		#this section has two seperate section one of it has div class = "_4qm1 editAnchor"
+		#but soup.find_all("div", class_ = "_4qm1") match class partially which can include this class = "_4qm1 editAnchor"
+		#no special code need for now
+		for i, each_div_5_1 in enumerate(divs):
+			#each div title
+			title_text_5_1 = each_div_5_1.find("div", class_="clearfix _h71").text
+			divs_5_1 = each_div_5_1.find_all("div", class_ = "_42ef")
+			for each_div_5_2 in divs_5_1:
+				a_5_1 = each_div_5_1.find_all("a")
+				if len(a_5_1) == 0:
+					s_5_1 = each_div_5_1.find_all("span")
+					if len(s_5_1) != 0:
+						u_name = each_div_5_1.find("span").text
+						u_relation = each_div_5_1.find_all("div", class_ = "fsm fwn fcg")[1].text
+						#add info with title
+					else:
+						#no information
+						#combine with title (add empty list {title:[]})
+						pass #TODO	
+				else:
+					for each_a_5_1 in a_5_1:
+						u_id = each_a_5_1['href']
+						u_name = each_a_5_1.text
+					if i == 1:
+						u_relation = each_a_5_1.find("div", class_ = "_173e _50f8 _50f3").text
+					elif i == 2:
+						u_relation = each_a_5_1.find_all("div", class_ = "fsm fwn fcg")[1].text
+						#add info with title
+		#process data with title
+
+	elif index == 6:
+		pass
+		#process data with tile
+
+	#return current information to the person we crawl
+	
 	
 
 def scrapy_friend_list_of_friends(browser):
