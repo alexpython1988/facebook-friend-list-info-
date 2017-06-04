@@ -33,6 +33,8 @@ def crawler_config_and_login_account():
 	pwd.clear()
 	pwd.send_keys(config.PASSWORD)
 
+	time.sleep(0.5)
+
 	browser.find_element_by_id("u_0_q").click()
 
 	#broswer in the main page after login
@@ -42,11 +44,11 @@ def scrapy_friend_list_based_on_account(browser):
 	i = 0
 	while(i < 30):
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-		time.sleep(0.5)
+		time.sleep(0.2)
 		i += 1
 
 	html = browser.page_source
-	soup = bs(html)
+	soup = bs(html, "lxml")
 	
 	# for a in soup.find_all('a', href = True):
 	# 	s = str(a['href'])
@@ -125,10 +127,11 @@ def scrapy_user_info(browser, uid):
 	print("get info for {} at {}".format(uid, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
 def get_info_of_user(browser, index):
+	info = dict()
 	#webElement.get_attribute("innnerHTML");
 	#obtain html source and add into beautifulsoup for process
 	html_source = browser.find_element_by_class_name("_4ms4")
-	soup = bs(html_source.get_attribute("innerHTML"))
+	soup = bs(html_source.get_attribute("innerHTML"), "lxml")
 	divs = soup.find_all("div", class_ = "_4qm1")
 
 	#process html with beautifulsoup based on index(different page)
@@ -226,6 +229,9 @@ def get_info_of_user(browser, index):
 			title_text_5_1 = each_div_5_1.find("div", class_="clearfix _h71").text
 			divs_5_1 = each_div_5_1.find_all("div", class_ = "_42ef")
 			for each_div_5_2 in divs_5_1:
+				# u_id = None
+				# u_name = None
+				# u_relation = None
 				a_5_1 = each_div_5_1.find_all("a")
 				if len(a_5_1) == 0:
 					s_5_1 = each_div_5_1.find_all("span")
@@ -241,19 +247,38 @@ def get_info_of_user(browser, index):
 					for each_a_5_1 in a_5_1:
 						u_id = each_a_5_1['href']
 						u_name = each_a_5_1.text
-					if i == 1:
-						u_relation = each_a_5_1.find("div", class_ = "_173e _50f8 _50f3").text
-					elif i == 2:
-						u_relation = each_a_5_1.find_all("div", class_ = "fsm fwn fcg")[1].text
+						
+						if i == 1:
+							u_relation = each_a_5_1.find("div", class_ = "_173e _50f8 _50f3").text
+						elif i == 2:
+							u_relation = each_a_5_1.find_all("div", class_ = "fsm fwn fcg")[1].text
 						#add info with title
-		#process data with title
+						#process data with title
 
 	elif index == 6:
-		pass
-		#process data with tile
+		for each_div_6_1 in divs:
+			title_text_6_1 = each_div_6_1.find("div", class_ = "clearfix _h71").text
+
+			class_6 = ["_4bl9", "_4bl7", "_2tdc"]
+			u_info_div = None
+			u_info = None
+			flag = None
+			for each_class in class_6:
+				u_info_div = each_div_6_1.find("div", class_ = each_class)
+
+			if u_info_div is not None:
+				if flag == "_2tdc":
+					u_info = dict()
+					for each_div_6_2 in each_div_6_1.find_all("div", class_ = flag):
+						key = each_div_6_2.find("div", class_ = "fsm fwn fcg").text
+						value = each_div_6_2.find("span", class_ = "_50f4").text
+						u_info[key] = value
+				else:
+					u_info = u_info_div.text
+			#process data with tile
 
 	#return current information to the person we crawl
-	
+	return info
 	
 
 def scrapy_friend_list_of_friends(browser):
