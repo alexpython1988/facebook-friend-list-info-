@@ -1,14 +1,21 @@
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException  
 import config
 import time
 from bs4 import BeautifulSoup as bs
 from datetime import datetime
 from Helper import My_Queue
 
+
 #data strcuture to store information obtained
 queue = My_Queue()
 friend_set = set()
 threshold = True
+page_bottom = ["medley_header_events", "medley_header_photos", "medley_header_likes"]
 # user_info_all = []
 
 def crawler_config_and_login_account():
@@ -40,10 +47,29 @@ def crawler_config_and_login_account():
 
 def scrapy_friend_list_based_on_account(browser):
 	i = 0
-	while(i < 30):
+	while(i < 60):
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+		l = []
+		page_bottom_flag = False 
+		for each in page_bottom:
+			try:
+				l.append(browser.find_element(By.ID, each))
+			except NoSuchElementException:
+				pass
+			if  len(l) > 0:
+				page_bottom_flag = True
+		if page_bottom_flag:
+			break
+		
 		time.sleep(0.5)
 		i += 1
+	# timeout = 5
+	# try:
+	# 	element_presented = EC.presence_of_element_located((By.CLASS_NAME, "uiHeaderTitle"))
+	# 	WebDriverWait(browser, timeout).until(element_presented)
+	# except TimeoutException:
+	# 	print("Not fully loaded") #change to log later
+
 
 	html = browser.page_source
 	soup = bs(html)
@@ -122,6 +148,7 @@ def scrapy_user_info(browser, uid):
 	#go to about tab
 	browser.execute_script("window.scrollTo(0, 0);")
 	browser.find_element_by_link_text("About").click()
+	time.sleep(0.3)
 	#browser.find_element_by_xpath("//div[@class='_6_7 clearfix']/a[2]").click()
 	
 	#obtain information in each section: 
@@ -134,6 +161,7 @@ def scrapy_user_info(browser, uid):
 	''' 
 	for index in range(2, 7):
 		browser.find_element_by_xpath("//ul[@class='uiList _4kg']/li[{}]/a[@class='_5pwr']".format(index)).click()
+		time.sleep(0.5)
 		get_info_of_user(browser, index)
 		#process info collected with current user info
 		
@@ -157,15 +185,22 @@ def get_info_of_user(browser, index):
 			print(title_text_2_1)
 			#section content
 			divs_2_2 = each_div_2_1.find_all("div", class_ = "_2tdc")
-			print(len(divs_2_2))
+			#print(len(divs_2_2))
 			#section might not contain any information
 			if (divs_2_2 is None) or (len(divs_2_2)) == 0:
 				#add title and empty info to dataset
 				print("No info")
 			else:
 				for each_div_2_2 in divs_2_2:
+					#print(each_div_2_2)
 					place_info_2 = each_div_2_2.find("div", class_ = "_2lzr _50f5 _50f7").text
-					details_2 = each_div_2_2.find("div", class_ = "fsm fwn fcg").text
+					
+					details_div = each_div_2_2.find("div", class_ = "fsm fwn fcg")
+					details_2 = None
+					#all text should be process as this, unless it must be exist
+					if details_div is not None:
+						details_2 = details_div.text
+					
 					print("place: {}; detail: {}".format(place_info_2, details_2))
 					#add information to section information
 
@@ -173,7 +208,6 @@ def get_info_of_user(browser, index):
 		#divs_3_1 = soup.find_all("div", class_ = "_4qm1")
 		#handle number of divs_3_1 has been found
 		num = len(divs)
-		print(num)
 		if num == 0:
 			#return no information
 			print("No info")
@@ -188,7 +222,10 @@ def get_info_of_user(browser, index):
 			else:
 				for each_div_3_1a in divs_3_1a:
 					loc_info_3_1a = each_div_3_1a.find("span", class_ = "_50f5 _50f7").text
-					detail_loc_3_1a = each_div_3_1a.find("div", class_ = "fsm fwn fcg").text
+					detail_loc_3_1a = None
+					detail_loc_div = each_div_3_1a.find("div", class_ = "fsm fwn fcg")
+					if detail_loc_div is not None:
+						detail_loc_3_1a = detail_loc_div.text
 					print("loc: {}; detail: {}".format(loc_info_3_1a, detail_loc_3_1a))
 					#process data with title
 		
@@ -204,7 +241,10 @@ def get_info_of_user(browser, index):
 			else:
 				for each_div_3_1b in divs_3_1b:
 					loc_info_3_1b = each_div_3_1b.find("span", class_ = "_50f5 _50f7").text
-					detail_loc_3_1b = each_div_3_1b.find("div", class_ = "fsm fwn fcg").text
+					detail_loc_3_1b = None
+					detail_loc_div = each_div_3_1a.find("div", class_ = "fsm fwn fcg")
+					if detail_loc_div is not None:
+						detail_loc_3_1b = detail_loc_div.text
 					print("loc: {}; detail: {}".format(loc_info_3_1b, detail_loc_3_1b))
 					#process data with title
 
@@ -218,7 +258,11 @@ def get_info_of_user(browser, index):
 			else:
 				for each_div_3_2 in divs_3_2:
 					loc_info_3_2 = each_div_3_2.find("span", class_ = "_50f5 _50f7").text
-					detail_loc_3_2 = each_div_3_2.find("div", class_ = "fsm fwn fcg").text
+					detail_loc_3_2 = None
+					detail_loc_div = each_div_3_2.find("div", class_ = "fsm fwn fcg")
+					if detail_loc_div is not None:
+						detail_loc_3_2 = detail_loc_div.text
+
 					print("loc: {}; detail: {}".format(loc_info_3_2, detail_loc_3_2))
 					#process data with title
 
@@ -255,25 +299,31 @@ def get_info_of_user(browser, index):
 			for each_div_5_2 in divs_5_1:
 				a_5_1 = each_div_5_1.find_all("a")
 				if len(a_5_1) == 0:
-					s_5_1 = each_div_5_1.find_all("span")
-					if len(s_5_1) != 0:
-						u_name = each_div_5_1.find("span").text
-						u_relation = each_div_5_1.find_all("div", class_ = "fsm fwn fcg")[1].text
-						#add info with title
-					else:
-						#no information
-						#combine with title (add empty list {title:[]})
-						pass #TODO	
+					# s_5_1 = each_div_5_1.find_all("span")
+					# if len(s_5_1) != 0:
+					# 	u_name = each_div_5_1.find("span").text
+					# 	#index out of range
+					# 	u_relation = each_div_5_1.find_all("div", class_ = "fsm fwn fcg")[1].text
+					# 	#add info with title
+					# else:
+					# 	#no information
+					# 	#combine with title (add empty list {title:[]})
+					if i == 0:
+						u_stat = each_div_5_2.text
+						print("stats: " + u_stat)
+					elif i == 1:
+						u_name = each_div_5_2.find("span", class_ = "_50f5 _50f7").text if each_div_5_2.find("span", class_ = "_50f5 _50f7") is not None else None
+						u_relation = each_div_5_2.find_all("div", class_ = "fsm fwn fcg")[1].text if len(each_div_5_2.find_all("div", class_ = "fsm fwn fcg")) > 1 else None
+						print("name: {} rel: {}".format(u_name, u_relation) )
 				else:
-					for each_a_5_1 in a_5_1:
-						u_id = each_a_5_1['href']
-						u_name = each_a_5_1.text
-						if i == 1:
-							u_relation = each_a_5_1.find("div", class_ = "_173e _50f8 _50f3").text
-						elif i == 2:
-							u_relation = each_a_5_1.find_all("div", class_ = "fsm fwn fcg")[1].text
-						print("id: {}; name: {}".format(u_id, u_name))
-						print(u_relation)
+					u_id = a_5_1[-1]['href']
+					u_name = a_5_1[-1].text
+					if i == 0:
+						u_relation = each_div_5_2.find("div", class_ = "_173e _50f8 _50f3").text
+					elif i == 1:
+						u_relation = each_div_5_2.find_all("div", class_ = "fsm fwn fcg")[1].text
+					print("id: {}; name: {}".format(u_id, u_name))
+					print(u_relation)
 
 	elif index == 6:
 		for each_div_6_1 in divs:

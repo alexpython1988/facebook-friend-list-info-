@@ -6,6 +6,9 @@ import json
 from datetime import datetime
 from Helper import My_Queue
 
+#TODO 
+#TODO add dfunctions for collect data into json
+
 #data strcuture to store information obtained
 queue = My_Queue()
 friend_list = set()

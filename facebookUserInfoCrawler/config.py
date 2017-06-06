@@ -2,10 +2,10 @@ CHROME_DRIVER_PATH = r"E:\driver\chromedriver.exe"
 
 URL = "http://www.facebook.com"
 
-ACCOUNT = "alexgre@ufl.edu"
+ACCOUNT = "yunxiache@gmail.com"
 
-PASSWORD = "alex1988"
+PASSWORD = "xy12345"
 
-ID = "Xi Yang"
+ID = "alex"
 
 THRESHOLD_FOR_MAX_NUMBER_OF_USER_TO_CRWAL = 5000
