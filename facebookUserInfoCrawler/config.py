@@ -2,9 +2,9 @@ CHROME_DRIVER_PATH = r"E:\driver\chromedriver.exe"
 
 URL = "http://www.facebook.com"
 
-ACCOUNT = "yunxiache@gmail.com"
+ACCOUNT = "yunxiache@xxxxxxxx"
 
-PASSWORD = "xy12345"
+PASSWORD = "xxxxxxxxxxxxxxxx"
 
 ID = "alex"
 
