@@ -4,26 +4,40 @@
 		
 		"info" : 
 		{
-			"attr1" : "111111",
-			"attr2" : "222222",
-			"attr3" : "333333"
+			"work":
+			{
+				"unit": "University of Florida",
+				"detail": "TA"
+			},
+			"education":
+			[
+				{
+					"unit" : "University of Florida",
+					"detail" : "class os 2015, Gainesville, Florida"
+				},
+				{
+					"unit" : "Tianjin Nankai High School",
+					"detail" : "xxxxx"
+				}
+			],
+
 		},
 
 		"friend list" : 
 		[
 			{
-				"friend_id": "1",
-				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+				"friend_id": "bj12345",
+				"url" : "http://www.facebook.com/bjbjbj.123?xxxxxx"
 			},
 
 			{
-				"friend_id": "1",
-				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+				"friend_id": "dagou12345",
+				"url" : "http://www.facebook.com/da.gou.123?xxxxxx"
 			},
 
 			{
-				"friend_id": "1",
-				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+				"friend_id": "taoludi",
+				"url" : "http://www.facebook.com/taolu.123?xxxxxx"
 			}
 		]
 	},
@@ -41,17 +55,17 @@
 		[
 			{
 				"friend_id": "1",
-				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+				"url" : "http://www.facebook.com/ying.123?xxxxxx"
 			},
 
 			{
 				"friend_id": "1",
-				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+				"url" : "http://www.facebook.com/yu.g.123?xxxxxx"
 			},
 
 			{
 				"friend_id": "1",
-				"url" : "http://www.facebook.com/yu.ying.123?xxxxxx"
+				"url" : "http://www.facebook.com/y.123?xxxxxx"
 			}
 		]
 	}

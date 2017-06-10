@@ -351,9 +351,12 @@ def get_info_of_user(browser, index):
 	
 
 def scrapy_friend_list_of_friends(browser):
-	browser.find_element_by_xpath("//div[@class='_6_7 clearfix']/a[3]").click()
+	browser.find_element_by_xpath("//div[@class='_6_7 clearfix lfloat _ohe']/a[3]").click()
 	scrapy_friend_list_based_on_account(browser)
 
+def output(content):
+	with open("output/demo.txt", "a") as f:
+		f.write(content + "\n")
 
 def main():
 	browser_1 = crawler_config_and_login_account()
