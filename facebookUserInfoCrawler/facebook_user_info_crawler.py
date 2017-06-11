@@ -23,6 +23,12 @@ page_bottom = ["medley_header_events", "medley_header_photos", "medley_header_li
 bloom_filter = Bloom_Filter(43132763, 30)
 
 def crawler_config_and_login_account():
+	# display = None
+	# if config.USE_VIETUAL_SCREEN:
+	# 	from pyvirtualdisplay import Display
+	# 	display = Display(visible=0, size=(800, 600))
+	# 	display.start()
+
 	# deactivate notifications from chrome
 	chrome_options = webdriver.ChromeOptions()
 	prefs = {"profile.default_content_setting_values.notifications" : 2, "credentials_enable_service": False, "profile.password_manager_enabled": False}
@@ -98,12 +104,11 @@ def scrapy_friend_list_based_on_account(browser, person_info):
 				 		fid += id_url.split("?")[-1].split("&")[0].split("=")[-1]
 				 	else:
 				 		fid += id_url.split("?")[0]
-				 	#add data to json file
-				 	#TODO
-
+				 	
+				 	#task
 				 	temp = dict()
 				 	temp["friend_id"] = fid
-				 	temp["url"] = id_url
+				 	temp["url"] = href_info
 				 	fl.append(temp)
 
 				 	if fid not in friend_set:
@@ -113,12 +118,6 @@ def scrapy_friend_list_based_on_account(browser, person_info):
 	#add list to friend info
 	if person_info is not None:
 		person_info["friend list"] = fl
-
-			 		
-# def go_to_info_page_on_account(browser):
-# 	browser.find_element_by_id("userNav").click()
-# 	print(2)
-# 	return browser
 
 def handle_each_new_friend_in_list(browser, next_url, person_info):
 	#create a new tab
@@ -441,19 +440,67 @@ def task(browser_1):
 	# browser_2 = go_to_info_page_on_account(browser_1)
 	# scrapy_user_info(browser_2)
 
+def task2(browser_1):
+	browser_1.find_element_by_link_text("Friend Lists").click()
+	browser_1.find_element_by_link_text("See All Friends").click()
+
+	id_url = browser_1.current_url.split("/")[3]
+	
+	fid = ""
+	if(id_url.startswith("profile.php")):
+		fid += id_url.split("?")[-1].split("=")[-1]
+	else:
+		fid += id_url
+
+	#use bloom filter to replace set to import memory efficiency
+	friend_set.add(fid)
+	scrapy_friend_list_based_on_account(browser_1, None)
+	
+	#user_info_all = []
+	i = 0
+	while not queue.is_empty():
+		i += 1
+		if i == 100:
+			time.sleep(180)
+		time.sleep(1)
+		next_url = queue.pop()
+		#task2_output(next_url)
+		#each_info = dict()
+		browser_1.execute_script("window.open('');")
+		browser_1.switch_to_window(browser_1.window_handles[-1])
+		browser_1.get(next_url)
+
+		id_url = next_url.split("/")[-1]
+		fid = ""
+		if(id_url.startswith("profile.php")):
+			fid += id_url.split("?")[-1].split("&")[0].split("=")[-1]
+		else:
+			fid += id_url.split("?")[0]
+
+		#get user friend list
+		scrapy_friend_list_of_friends(browser_1, None)
+		browser_1.close()
+		browser_1.switch_to_window(browser_1.window_handles[-1])
+		#handle_each_new_friend_in_list(browser_1, next_url, each_info)
+		
+
+	browser_1.quit()
+
 def recovery():
 	pass
 
 def main():
 	browser_1 = crawler_config_and_login_account()
 	task(browser_1)
-	# try:
-	# 	task()
-	# except :
-	# 	with open("rest_list.txt", "w") as f:
-	# 		while not queue.is_empty:
-	# 			print(1)
-	# 			print(queue.pop(), file=f, end = "\n")
+	try:
+		task()
+	except :
+		with open("rest_list.txt", "w") as f:
+			while not queue.is_empty:
+				print(1)
+				print(queue.pop(), file=f, end = "\n")
+
+
 
 if __name__ == '__main__':
 	main()

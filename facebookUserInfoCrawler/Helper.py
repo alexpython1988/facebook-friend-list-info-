@@ -51,6 +51,15 @@ class Bloom_Filter():
 				return False
 		return True
 
+class Counter:
+	count = 0
+
+	def increase(self):
+		self.count += 1
+
+	def size(self):
+		return self.count
+
 def test():
 	q = My_Queue()
 	q.put(0)
