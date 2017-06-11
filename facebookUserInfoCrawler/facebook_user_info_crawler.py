@@ -417,7 +417,11 @@ def task(browser_1):
 	scrapy_friend_list_based_on_account(browser_1, None)
 	
 	user_info_all = []
+	i = 0
 	while not queue.is_empty():
+		i += 1
+		if i % 10:
+			time.sleep(120)
 		time.sleep(2)
 		next_url = queue.pop()
 		each_info = dict()
@@ -439,52 +443,6 @@ def task(browser_1):
 	browser_1.quit()
 	# browser_2 = go_to_info_page_on_account(browser_1)
 	# scrapy_user_info(browser_2)
-
-def task2(browser_1):
-	browser_1.find_element_by_link_text("Friend Lists").click()
-	browser_1.find_element_by_link_text("See All Friends").click()
-
-	id_url = browser_1.current_url.split("/")[3]
-	
-	fid = ""
-	if(id_url.startswith("profile.php")):
-		fid += id_url.split("?")[-1].split("=")[-1]
-	else:
-		fid += id_url
-
-	#use bloom filter to replace set to import memory efficiency
-	friend_set.add(fid)
-	scrapy_friend_list_based_on_account(browser_1, None)
-	
-	#user_info_all = []
-	i = 0
-	while not queue.is_empty():
-		i += 1
-		if i == 100:
-			time.sleep(180)
-		time.sleep(1)
-		next_url = queue.pop()
-		#task2_output(next_url)
-		#each_info = dict()
-		browser_1.execute_script("window.open('');")
-		browser_1.switch_to_window(browser_1.window_handles[-1])
-		browser_1.get(next_url)
-
-		id_url = next_url.split("/")[-1]
-		fid = ""
-		if(id_url.startswith("profile.php")):
-			fid += id_url.split("?")[-1].split("&")[0].split("=")[-1]
-		else:
-			fid += id_url.split("?")[0]
-
-		#get user friend list
-		scrapy_friend_list_of_friends(browser_1, None)
-		browser_1.close()
-		browser_1.switch_to_window(browser_1.window_handles[-1])
-		#handle_each_new_friend_in_list(browser_1, next_url, each_info)
-		
-
-	browser_1.quit()
 
 def recovery():
 	pass
