@@ -450,13 +450,10 @@ def recovery():
 def main():
 	browser_1 = crawler_config_and_login_account()
 	task(browser_1)
-	try:
-		task()
-	except :
-		with open("rest_list.txt", "w") as f:
-			while not queue.is_empty:
-				print(1)
-				print(queue.pop(), file=f, end = "\n")
+
+	task()
+
+		
 
 
 
