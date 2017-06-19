@@ -376,7 +376,7 @@ def worker(browser, jsons):
 	i = 0
 	while not queue.is_empty(): 
 		if i % 5:
-			time.sleep(random.random()*1000)
+			time.sleep(random.random()*1200)
 		next_url = queue.pop()
 		try:
 			browser.execute_script("window.open('');")
@@ -390,6 +390,7 @@ def worker(browser, jsons):
 				uid = get_user_facebook_id(next_url)
 			except ValueError as e:
 				#log e
+				print(e)
 				browser.close()
 				browser.switch_to_window(browser.window_handles[-1])
 
@@ -429,15 +430,15 @@ def task(i, file):
 		use_virtual_screen()
 	browser = crawler_config_and_login_account()
 	
-	try:
-		worker(browser, jsons)
-	except WebDriverException as e:
-		logger.error(e.msg)
-		logger.info("reset the crawler.")
-		if browser is not None:
-			browser.quit()
-		browser = crawler_config_and_login_account()
-		worker(browser, jsons)	
+	# try:
+	worker(browser, jsons)
+	# except WebDriverException as e:
+	# 	logger.error(e.msg)
+	# 	logger.info("reset the crawler.")
+	# 	if browser is not None:
+	# 		browser.quit()
+	# 	browser = crawler_config_and_login_account()
+	# 	worker(browser, jsons)	
 
 def count_lines_in_file(file):
 	with open(file, "r") as f:

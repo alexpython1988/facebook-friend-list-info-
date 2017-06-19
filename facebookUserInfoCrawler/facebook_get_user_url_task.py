@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException  
+from selenium.common.exceptions import NoSuchElementException
 import config
 import time
 from bs4 import BeautifulSoup as bs
@@ -8,16 +8,22 @@ from Helper import My_Queue
 from Helper import Bloom_Filter
 from Helper import Counter
 import random
-#TODO 
-#TODO add dfunctions for collect data into json
+import logging
+import mmap
+import sys
 
 #data strcuture to store information obtained
 queue = My_Queue()
 page_bottom = ["medley_header_events", "medley_header_photos", "medley_header_likes"]
-bloom_filter = Bloom_Filter(43132763, 30)
+bloom_filter = Bloom_Filter(575103503 , 40)
 count = Counter()
-display = None
+FORMAT = '%(asctime)-20s %(name)-5s %(levelname)-10s %(message)s'
+logging.basicConfig(filename='get_user_url.log',level=logging.INFO, format=FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
+logger = logging.getLogger("task")
+
+
 def crawler_config_and_login_account():
+	display = None
 	if config.USE_VIETUAL_SCREEN:
 		from pyvirtualdisplay import Display
 		display = Display(visible=0, size=(1080, 720))
@@ -44,12 +50,12 @@ def crawler_config_and_login_account():
 	pwd.clear()
 	pwd.send_keys(config.PASSWORD)
 
+	submit = browser.find_element_by_xpath("//input[@id='u_0_r']")
 	time.sleep(0.5)
-
-	browser.find_element_by_id("u_0_q").click()
+	submit.click()
 
 	#broswer in the main page after login
-	return browser
+	return browser, display
 
 def scrapy_friend_list_based_on_account(browser, person_info):
 	i = 0
@@ -67,7 +73,7 @@ def scrapy_friend_list_based_on_account(browser, person_info):
 		if page_bottom_flag:
 			break
 		
-		time.sleep(1)
+		time.sleep(0.5)
 		i += 1
 
 	html = browser.page_source
@@ -102,38 +108,15 @@ def scrapy_friend_list_based_on_account(browser, person_info):
 				 		bloom_filter.add(fid)
 				 		fl.append(href_info)
 				 		queue.put(href_info)
-				 		#print(count.size()		 			
-	task2_output(fl)
-
-def handle_each_new_friend_in_list(browser, next_url, person_info):
-	#create a new tab
-	browser.execute_script("window.open('');")
-	browser.switch_to_window(browser.window_handles[-1])
-	#extract next url from list
-
-	# next_url = queue.pop()
-	browser.get(next_url)
-
-	id_url = next_url.split("/")[-1]
-	fid = ""
-	if(id_url.startswith("profile.php")):
-		fid += id_url.split("?")[-1].split("&")[0].split("=")[-1]
-	else:
-		fid += id_url.split("?")[0]
-
-	#get user friend list
-	scrapy_friend_list_of_friends(browser, person_info)
-
-	#close new tab and switch back to account
-	browser.close()
-	browser.switch_to_window(browser.window_handles[-1])
-	return browser
+	logger.info("get {} urls.".format(len(fl)))			 			 			
+	return fl
 
 def scrapy_friend_list_of_friends(browser, person_info):
-	time.sleep(1)
-	browser.find_element_by_xpath("//div[@class='_6_7 clearfix lfloat _ohe']/a[3]").click()
+	time.sleep(0.5)
+	browser.find_element(By.XPATH, "//div[@id='fbTimelineHeadline'][@class='clearfix']/div[2]/ul/li[3]/a").click()
+	
 	#browser.find_element_by_xpath("//div[@id='u_0_o']/a[3]").click()
-	scrapy_friend_list_based_on_account(browser, person_info)
+	return scrapy_friend_list_based_on_account(browser, person_info)
 
 def task2(browser_1):
 	browser_1.find_element_by_link_text("Friend Lists").click()
@@ -149,38 +132,80 @@ def task2(browser_1):
 
 	#use bloom filter to replace set to import memory efficiency
 	bloom_filter.add(fid)
-	scrapy_friend_list_based_on_account(browser_1, None)
+	new_url_list = scrapy_friend_list_based_on_account(browser_1, None)
+	task2_output(new_url_list)
 
 	i = 0
+	flag = 0
 	while not queue.is_empty() and count.size() < 1000000:
+		new_url_list = []
 		i += 1
-		if i % 5:
-			time.sleep(random.random()*1000)
+
+		if i % 5 == 0:
+			t = random.random()*1200
+			logger.info("sleep {}s".format(t))
+			time.sleep(t)
+			i = 0
+			logger.info(get_output_size())
+		
 		time.sleep(1)
 		next_url = queue.pop()
-		browser_1.execute_script("window.open('');")
-		browser_1.switch_to_window(browser_1.window_handles[-1])
-		browser_1.get(next_url)
-		scrapy_friend_list_of_friends(browser_1, None)
-		browser_1.close()
-		browser_1.switch_to_window(browser_1.window_handles[-1])
+		
+		try:
+			browser_1.execute_script("window.open('');")
+			browser_1.switch_to_window(browser_1.window_handles[-1])
+		
+			browser_1.get(next_url)
+		
+			new_url_list = scrapy_friend_list_of_friends(browser_1, None)
+			
+			browser_1.close()
+			browser_1.switch_to_window(browser_1.window_handles[-1])
+		except:
+			logger.error("Exception happen")
+			flag += 1
+			if flag > 100:
+				sys.exit(1)
+			queue.put(next_url)
+			if len(browser_1.window_handles) > 1:
+				browser_1.switch_to_window(browser_1.window_handles[-1])
+				browser_1.close()
+			browser_1.switch_to_window(browser_1.window_handles[-1])
+			browser_1.refresh()
+			continue
+		task2_output(new_url_list)
+	
 	browser_1.quit()
+
+def get_output_size():
+	lines = 0
+	with open("url_list.txt", "r+") as f:
+		buf = mmap.mmap(f.fileno(), 0)
+		readline = buf.readline
+		while readline():
+			lines += 1
+	return "No. of total urls: {}".format(lines)
 	
 def task2_output(url):
 	if len(url) != 0:
-		with open("new_list.txt", "a") as f:
+		with open("url_list.txt", "a") as f:
 			for each in url:
 				print(each, file = f, end = "\n")
 
+def left_task():
+	with open("backup.txt", "w") as f:
+		while not queue.is_empty():
+			print(queue.pop(), file=f, end='\n')
+		print("*************************************", file=f, end='')
+
 def main():
-	browser_1 = crawler_config_and_login_account()
+	browser_1, display = crawler_config_and_login_account()
 	try:
 		task2(browser_1)
-	except:
-		browser_1.switch_to_window(browser_1.window_handles[-1])
-		browser_1.back()
-		browser_1.refresh()
-		task2(browser_1)
+	finally:
+		left_task()
+		if display is not None:
+			display.stop()
 
 if __name__ == '__main__':
 	main()

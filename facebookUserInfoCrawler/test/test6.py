@@ -1,4 +1,12 @@
-num_lines = sum(1 for line in open("file.txt"))
+import mmap
 
-for i in range(0, num_lines, 1000):
-	print(i)
+def get_output_size():
+	lines = 0
+	with open("file.txt", "r+") as f:
+		buf = mmap.mmap(f.fileno(), 0)
+		readline = buf.readline
+		while readline():
+			lines += 1
+	return "No. of total urls: {}".format(lines)
+
+print(get_output_size())

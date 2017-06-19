@@ -5,16 +5,16 @@ CHROME_DRIVER_PATH = r"E:\driver\chromedriver.exe"
 
 URL = "http://www.facebook.com"
 
-ACCOUNT = "xxxxxxxxxx"
+ACCOUNT = "alexgre@ufl.edu"
 
-PASSWORD = "xxxxxxxx"
+PASSWORD = "alex1988"
 
 ID = "alex"
 
-THRESHOLD_FOR_MAX_NUMBER_OF_USER_TO_CRWAL = 1000000
+THRESHOLD_FOR_MAX_NUMBER_OF_USER_TO_CRWAL = 10000000
 
 EMAIL = False
 
 INTO_DB = False
 
-USE_VIETUAL_SCREEN = False
+USE_VIETUAL_SCREEN = True
