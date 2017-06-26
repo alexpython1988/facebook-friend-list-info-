@@ -21,6 +21,108 @@ FORMAT = '%(asctime)-20s %(name)-5s %(levelname)-10s %(message)s'
 logging.basicConfig(filename='get_user_url.log',level=logging.INFO, format=FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("task")
 
+def reset(browser_1, index):
+	browser_1.quit()
+	chrome_options = webdriver.ChromeOptions()
+	prefs = {"profile.default_content_setting_values.notifications" : 2, "credentials_enable_service": False, "profile.password_manager_enabled": False}
+	chrome_options.add_experimental_option("prefs",prefs)
+	#chrome_options.add_argument("--enable-save-password-bubble=false")
+	# chrome_options.add_user_profile_preference("credentials_enable_service", False);
+	# chrome_options.add_user_profile_preference("profile.password_manager_enabled", False);
+
+	#create browser
+	browser = webdriver.Chrome(executable_path = config.CHROME_DRIVER_PATH, chrome_options = chrome_options)
+	browser.get(config.URL)
+	browser.maximize_window()
+	#login into account
+	k1 = None
+	k2 = None
+	if index % 3 == 0:
+		k1 = config.ACCOUNT
+		k2 = config.PASSWORD
+	elif index % 2 == 0:
+		k1 = config.ACCOUNT1
+		k2 = config.PASSWORD1
+	else:
+		k1 = config.ACCOUNT2
+		k2 = config.PASSWORD2
+	
+	email = browser.find_element_by_id("email")
+	email.clear()
+	email.send_keys(k1)
+
+	pwd = browser.find_element_by_id("pass")
+	pwd.clear()
+	pwd.send_keys(k2)
+
+	submit = browser.find_element_by_xpath("//input[@id='u_0_r']")
+	time.sleep(0.5)
+	submit.click()
+
+	#broswer in the main page after login
+	return browser
+
+def resume():
+	with open("url_list.txt", "r") as f:
+		for i, each in enumerate(f):
+			id_url = each.split("/")[-1]
+			fid = None
+			if(id_url.startswith("profile.php")):
+				fid = id_url.split("?")[-1].split("&")[0].split("=")[-1]
+			else:
+				fid = id_url.split("?")[0]
+			bloom_filter.add(fid)		
+
+			if i >= 785:
+				queue.put(each)
+			count.increase()
+	
+	browser_1, display = crawler_config_and_login_account()
+	
+	i = 0
+	flag = 0
+	while not queue.is_empty() and count.size() < config.THRESHOLD_FOR_MAX_NUMBER_OF_USER_TO_CRWAL:
+		new_url_list = []
+		i += 1
+		if i % 99 == 0:
+			logger.info("reset the browser")
+			browser_1 = reset(browser_1, i)
+
+		if i % 5 == 0:
+			t = random.random()*1200
+			logger.info("sleep {}s".format(t))
+			time.sleep(t)
+			logger.info(count.size())
+
+		time.sleep(1)
+		next_url = queue.pop()
+		
+		try:
+			browser_1.execute_script("window.open('');")
+			browser_1.switch_to_window(browser_1.window_handles[-1])
+		
+			browser_1.get(next_url)
+		
+			new_url_list = scrapy_friend_list_of_friends(browser_1, None)
+			
+			browser_1.close()
+			browser_1.switch_to_window(browser_1.window_handles[-1])
+		except:
+			logger.error("Exception happen")
+			flag += 1
+			if flag > 100:
+				sys.exit(1)
+			queue.put(next_url)
+			if len(browser_1.window_handles) > 1:
+				browser_1.switch_to_window(browser_1.window_handles[-1])
+				browser_1.close()
+			browser_1.switch_to_window(browser_1.window_handles[-1])
+			browser_1.refresh()
+			continue
+		task2_output(new_url_list)
+	
+	browser_1.quit()
+
 
 def crawler_config_and_login_account():
 	display = None
@@ -199,13 +301,19 @@ def left_task():
 		print("*************************************", file=f, end='')
 
 def main():
-	browser_1, display = crawler_config_and_login_account()
+	#browser_1, display = crawler_config_and_login_account()
+	# try:
+	# 	task2(browser_1)
+	# finally:
+	# 	left_task()
+	# 	if display is not None:
+	# 		display.stop()
 	try:
-		task2(browser_1)
+		resume()
 	finally:
 		left_task()
-		if display is not None:
-			display.stop()
+		
+
 
 if __name__ == '__main__':
 	main()
