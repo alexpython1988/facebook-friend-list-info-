@@ -1,8 +1,5 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-# from selenium.webdriver.support.ui import WebDriverWait
-# from selenium.webdriver.support import expected_conditions as EC
-# from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException  
 import config
 import time
@@ -10,17 +7,26 @@ from bs4 import BeautifulSoup as bs
 import json
 from datetime import datetime
 from Helper import My_Queue
-from Helper import Bloom_Filter
+import random
+import logging
+from Helper import Counter
+import os.path
+import sys
+from config import get_account_pwd
+#from Helper import Bloom_Filter
 
-#TODO 
-#TODO add dfunctions for collect data into json
+#logger setup
+FORMAT = '%(asctime)-20s %(name)-5s %(levelname)-10s %(message)s'
+logging.basicConfig(filename='get_user_url.log',level=logging.INFO, format=FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
+logger = logging.getLogger("task")
 
 #data strcuture to store information obtained
 queue = My_Queue()
-friend_set = set()
+count = Counter()
+# friend_set = set()
 page_bottom = ["medley_header_events", "medley_header_photos", "medley_header_likes"]
 #size is descided based on https://hur.st/bloomfilter?n=4&p=1.0E-20
-bloom_filter = Bloom_Filter(43132763, 30)
+#bloom_filter = Bloom_Filter(575103503 , 40)
 
 def crawler_config_and_login_account():
 	# display = None
@@ -44,22 +50,30 @@ def crawler_config_and_login_account():
 	#login into account
 	email = browser.find_element_by_id("email")
 	email.clear()
-	email.send_keys(config.ACCOUNT)
+	acct, paswd = get_account_pwd(2)
+	email.send_keys(acct)
 
 	pwd = browser.find_element_by_id("pass")
 	pwd.clear()
-	pwd.send_keys(config.PASSWORD)
+	pwd.send_keys(paswd)
 
 	time.sleep(0.5)
 
-	browser.find_element_by_id("u_0_q").click()
+	submit = browser.find_element_by_xpath("//input[@id='u_0_r']")
+	time.sleep(0.5)
+	submit.click()
 
+	time.sleep(2)
+	for i in range(20):
+		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+		time.sleep(0.5)
+	browser.execute_script("window.scrollTo(0, 0);")
 	#broswer in the main page after login
 	return browser
 
 def scrapy_friend_list_based_on_account(browser, person_info):
 	i = 0
-	while(i < 60):
+	while(i < 80):
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 		
 		l = []
@@ -74,7 +88,7 @@ def scrapy_friend_list_based_on_account(browser, person_info):
 		if page_bottom_flag:
 			break
 		
-		time.sleep(0.3)
+		time.sleep(0.5)
 		i += 1
 
 	html = browser.page_source
@@ -111,10 +125,10 @@ def scrapy_friend_list_based_on_account(browser, person_info):
 				 	temp["url"] = href_info
 				 	fl.append(temp)
 
-				 	if fid not in friend_set:
-				 		friend_set.add(fid)
-				 		if len(friend_set) <= config.THRESHOLD_FOR_MAX_NUMBER_OF_USER_TO_CRWAL:
-				 			queue.put(href_info)
+				 	# if fid not in friend_set:
+				 	# 	friend_set.add(fid)
+				 	# 	if len(friend_set) <= config.THRESHOLD_FOR_MAX_NUMBER_OF_USER_TO_CRWAL:
+				 	# 		queue.put(href_info)
 	#add list to friend info
 	if person_info is not None:
 		person_info["friend list"] = fl
@@ -149,8 +163,8 @@ def handle_each_new_friend_in_list(browser, next_url, person_info):
 	return browser
 
 def scrapy_friend_list_of_friends(browser, person_info):
-	time.sleep(0.2)
-	browser.find_element_by_xpath("//div[@class='_6_7 clearfix lfloat _ohe']/a[3]").click()
+	time.sleep(1)
+	browser.find_element(By.XPATH, "//div[@id='fbTimelineHeadline'][@class='clearfix']/div[2]/ul/li[3]/a").click()
 	#browser.find_element_by_xpath("//div[@id='u_0_o']/a[3]").click()
 	scrapy_friend_list_based_on_account(browser, person_info)
 
@@ -158,7 +172,7 @@ def scrapy_user_info(browser, uid, person_info):
 	#go to about tab
 	browser.execute_script("window.scrollTo(0, 0);")
 	browser.find_element_by_link_text("About").click()
-	time.sleep(0.2)
+	time.sleep(1)
 	#browser.find_element_by_xpath("//div[@class='_6_7 clearfix']/a[2]").click()
 	
 	#obtain information in each section: 
@@ -182,7 +196,8 @@ def scrapy_user_info(browser, uid, person_info):
 		#process info collected with current user info
 
 	#change to log later for debug or check data purposes
-	print("get info for {} at {}".format(uid, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+	info = "get info for {} at {}".format(uid, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+	logger.info(info)
 
 def get_info_of_user(browser, index):
 	info = dict()
@@ -213,7 +228,9 @@ def get_info_of_user(browser, index):
 				for each_div_2_2 in divs_2_2:
 					c2 = dict()
 					place_info_2 = each_div_2_2.find("div", class_ = "_2lzr _50f5 _50f7").text
-					details_2 = each_div_2_2.find("div", class_ = "fsm fwn fcg").text
+					details_2 = None
+					if each_div_2_2.find("div", class_ = "fsm fwn fcg") is not None: 
+						details_2 = each_div_2_2.find("div", class_ = "fsm fwn fcg").text
 					#add information to section information
 					c2["unit"] = place_info_2
 					c2["detail"] = details_2
@@ -382,80 +399,147 @@ def get_info_of_user(browser, index):
 					else:
 						info[title_text_6_1] = u_info_div.text
 					break
-
 	#return current information to the person we crawl
 	return info
 
-def output_json(ul): 
+def output_json(file, ui): 
 	#can choose to output as file or email the zipped data to user 
 	if config.EMAIL:
 		#call the email class from send_email.py
-
-		print(ul)
+		pass
 	elif config.INTO_DB:
 		#output the json into a file 
 		pass
 	else:
-		with open("file", "a") as f:
-			for each in ul:
-				print(each, file = f, end = "\n")
+		with open(file, "a", newline='\n') as f:
+			data = json.dumps(ui)
+			print(data, file=f)
 
-def task(browser_1):
-	#go to friend lists
-	browser_1.find_element_by_link_text("Friend Lists").click()
-	browser_1.find_element_by_link_text("See All Friends").click()
+def reset(browser_1, index):
+	browser_1.quit()
+	time.sleep(300)
+	chrome_options = webdriver.ChromeOptions()
+	prefs = {"profile.default_content_setting_values.notifications" : 2, "credentials_enable_service": False, "profile.password_manager_enabled": False}
+	chrome_options.add_experimental_option("prefs",prefs)
+	#chrome_options.add_argument("--enable-save-password-bubble=false")
+	# chrome_options.add_user_profile_preference("credentials_enable_service", False);
+	# chrome_options.add_user_profile_preference("profile.password_manager_enabled", False);
 
-	id_url = browser_1.current_url.split("/")[3]
-	fid = ""
-	if(id_url.startswith("profile.php")):
-		fid += id_url.split("?")[-1].split("=")[-1]
+	#create browser
+	browser = webdriver.Chrome(executable_path = config.CHROME_DRIVER_PATH, chrome_options = chrome_options)
+	browser.get(config.URL)
+	browser.maximize_window()
+	#login into account
+	k1 = None
+	k2 = None
+	#do not use index = 2 here
+	if index % 2 == 0:
+		k1,k2 = get_account_pwd(0)
 	else:
-		fid += id_url
-
-	#use bloom filter to replace set to import memory efficiency
-	friend_set.add(fid)
-	scrapy_friend_list_based_on_account(browser_1, None)
+		k1,k2 = get_account_pwd(1)
 	
-	user_info_all = []
+	log_info = "The broser was reset. The current user is {}".format(k1) 
+	logger.info(log_info)
+
+	email = browser.find_element_by_id("email")
+	email.clear()
+	email.send_keys(k1)
+
+	pwd = browser.find_element_by_id("pass")
+	pwd.clear()
+	pwd.send_keys(k2)
+
+	submit = browser.find_element_by_xpath("//input[@id='u_0_r']")
+	time.sleep(0.5)
+	submit.click()
+
+	time.sleep(2)
+	for i in range(20):
+		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+		time.sleep(0.5)
+	browser.execute_script("window.scrollTo(0, 0);")
+	#broswer in the main page after login
+	return browser
+			
+def task(browser_1):
 	i = 0
+	err_flag = 0
 	while not queue.is_empty():
 		i += 1
-		if i % 10:
-			time.sleep(120)
-		time.sleep(2)
-		next_url = queue.pop()
-		each_info = dict()
-		handle_each_new_friend_in_list(browser_1, next_url, each_info)
-		#output_json(each_info)
-		
-		json_file = json.dumps(each_info)
-		print(json_file)
-		user_info_all.append(json_file)
-		if len(user_info_all) > 1000:
-			output_json(user_info_all)
-			user_info_all = []
-	
-	if len(user_info_all) != 0:
-		output_json(user_info_all)
-	#browser_1.back()
-	# browser_2 = go_to_info_page_on_account(browser_1)
-	# scrapy_user_info(browser_2)
-	browser_1.quit()
-	# browser_2 = go_to_info_page_on_account(browser_1)
-	# scrapy_user_info(browser_2)
+		if i % 77 == 0:
+			logger.info("reset the browser")
+			browser_1 = reset(browser_1, i)
 
-def recovery():
-	pass
+		if i % 5 == 0:
+			t = random.random()*1000
+			logger.info("sleep {}s".format(t))
+			time.sleep(t)
+			logger.info("Total jobs left: {}".format(count.size()))
+		
+		next_url = queue.pop()
+		count.decrease()
+		each_info = dict()
+		#handle_each_new_friend_in_list(browser_1, next_url, each_info)
+
+		try:
+			handle_each_new_friend_in_list(browser_1, next_url, each_info)
+		except Exception as e:
+			err_flag += 1
+			error_url(next_url)
+			#close current window
+			browser_1.close()
+			browser_1.switch_to_window(browser_1.window_handles[-1])
+			logger.error('the error is {} associated with url as {}.'.format(e, next_url))
+			if err_flag == 20:
+				backup()
+				sys.exit(1)
+			continue
+		
+		output_json("user_info_1.json", each_info)
+		each_info = None
+		err_flag = 0
+		
+		if i == 155:
+			i = 0
+	
+	logger.info("job done.")
+	browser_1.quit()
+	
+def load_task(file, start, end):
+	cached = 0
+	if os.path.exists("backup1.txt"):
+		with open("backup1.txt", 'r') as f:
+			for each in f:
+				cached = int(each)
+	
+	start = end - cached
+
+	with open(file, "r") as f:
+		for i, each_url in enumerate(f):
+			if i >= start and i < end:
+				queue.put(each_url)
+				count.increase()
+
+def backup():
+	with open("backup1.txt", "w") as f:
+		print(count.size(), file = f)
+
+def error_url(url):
+	with open("unprocessed_url.txt", "a") as f:
+		print(url, file=f)	
 
 def main():
-	browser_1 = crawler_config_and_login_account()
-	task(browser_1)
+	try:
+		load_task("url_list.txt", config.START1, config.END1)
+		browser_1 = crawler_config_and_login_account()
+		task(browser_1)
+	except Exception as e:
+		logger.error(e)
+		backup()
 
-	task()
-
-		
-
-
+	# load_task("unprocessed_url.txt", 0, 3)
+	# browser_1 = crawler_config_and_login_account()
+	# task(browser_1)
 
 if __name__ == '__main__':
 	main()

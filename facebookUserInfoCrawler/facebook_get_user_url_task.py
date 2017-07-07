@@ -11,6 +11,7 @@ import random
 import logging
 import mmap
 import sys
+from config import get_account_pwd
 
 #data strcuture to store information obtained
 queue = My_Queue()
@@ -38,14 +39,11 @@ def reset(browser_1, index):
 	k1 = None
 	k2 = None
 	if index % 3 == 0:
-		k1 = config.ACCOUNT
-		k2 = config.PASSWORD
+		k1,k2 = get_account_pwd(0)
 	elif index % 2 == 0:
-		k1 = config.ACCOUNT1
-		k2 = config.PASSWORD1
+		k1,k2 = get_account_pwd(1)
 	else:
-		k1 = config.ACCOUNT2
-		k2 = config.PASSWORD2
+		k1,k2 = get_account_pwd(2)
 	
 	email = browser.find_element_by_id("email")
 	email.clear()
@@ -63,6 +61,18 @@ def reset(browser_1, index):
 	return browser
 
 def resume():
+	logger.info("resume from previous backup point...")
+
+	bcount = 0
+	bqueue = 0
+	with open("backup.txt", "r") as f:
+		for i, each in enumerate(f):
+			if i == 0:
+				bcount = int(each)
+			else:
+				bqueue = int(each)
+	backup_point = bcount - bqueue
+
 	with open("url_list.txt", "r") as f:
 		for i, each in enumerate(f):
 			id_url = each.split("/")[-1]
@@ -73,7 +83,7 @@ def resume():
 				fid = id_url.split("?")[0]
 			bloom_filter.add(fid)		
 
-			if i >= 785:
+			if i >= backup_point:
 				queue.put(each)
 			count.increase()
 	
@@ -146,11 +156,12 @@ def crawler_config_and_login_account():
 	#login into account
 	email = browser.find_element_by_id("email")
 	email.clear()
-	email.send_keys(config.ACCOUNT)
+	k1,k2 = get_account_pwd(0)
+	email.send_keys(k1)
 
 	pwd = browser.find_element_by_id("pass")
 	pwd.clear()
-	pwd.send_keys(config.PASSWORD)
+	pwd.send_keys(k2)
 
 	submit = browser.find_element_by_xpath("//input[@id='u_0_r']")
 	time.sleep(0.5)

@@ -57,6 +57,9 @@ class Counter:
 	def increase(self):
 		self.count += 1
 
+	def decrease(self):
+		self.count -= 1
+
 	def size(self):
 		return self.count
 

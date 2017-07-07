@@ -7,6 +7,7 @@ from Helper import My_Queue
 import logging
 import random
 from selenium.common.exceptions import NoSuchElementException, NoSuchAttributeException,TimeoutException, ElementNotVisibleException, WebDriverException 
+from config import get_account_pwd
 from selenium.webdriver.common.by import By
 
 queue = My_Queue()
@@ -275,11 +276,12 @@ def crawler_config_and_login_account():
 	#login into account
 	email = browser.find_element_by_id("email")
 	email.clear()
-	email.send_keys(config.ACCOUNT)
+	k1,k2 = get_account_pwd(0)
+	email.send_keys(k1)
 
 	pwd = browser.find_element_by_id("pass")
 	pwd.clear()
-	pwd.send_keys(config.PASSWORD)
+	pwd.send_keys(k2)
 
 	time.sleep(0.2)
 
