@@ -20,15 +20,12 @@ def test_accont(k1, k2):
 	time.sleep(1)
 	submit.click()
 
-	time.sleep(3)
-	browser.quit()
+	time.sleep(1)
 
 def main():
-	list1 = [config.ACCOUNT0,config.ACCOUNT1,config.ACCOUNT2,config.ACCOUNT3,config.ACCOUNT4,config.ACCOUNT5]
-	list2 = [config.PASSWORD0,config.PASSWORD1,config.PASSWORD2,config.PASSWORD3,config.PASSWORD4,config.PASSWORD5]
-
-	for i in range(2,6):
-		test_accont(list1[i], list2[i])
+	for i in range(7):
+		acct, pwd = config.get_account_pwd(i)
+		test_accont(acct, pwd)
 
 if __name__ == '__main__':
 	main()

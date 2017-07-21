@@ -15,26 +15,7 @@ import sys
 from config import get_account_pwd
 #from Helper import Bloom_Filter
 
-#logger setup
-FORMAT = '%(asctime)-20s %(name)-5s %(levelname)-10s %(message)s'
-logging.basicConfig(filename='get_user_url.log',level=logging.INFO, format=FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
-logger = logging.getLogger("task")
-
-#data strcuture to store information obtained
-queue = My_Queue()
-count = Counter()
-# friend_set = set()
-page_bottom = ["medley_header_events", "medley_header_photos", "medley_header_likes"]
-#size is descided based on https://hur.st/bloomfilter?n=4&p=1.0E-20
-#bloom_filter = Bloom_Filter(575103503 , 40)
-
 def crawler_config_and_login_account():
-	# display = None
-	# if config.USE_VIETUAL_SCREEN:
-	# 	from pyvirtualdisplay import Display
-	# 	display = Display(visible=0, size=(800, 600))
-	# 	display.start()
-
 	# deactivate notifications from chrome
 	chrome_options = webdriver.ChromeOptions()
 	prefs = {"profile.default_content_setting_values.notifications" : 2, "credentials_enable_service": False, "profile.password_manager_enabled": False}
@@ -50,7 +31,7 @@ def crawler_config_and_login_account():
 	#login into account
 	email = browser.find_element_by_id("email")
 	email.clear()
-	acct, paswd = get_account_pwd(2)
+	acct, paswd = get_account_pwd(1)
 	email.send_keys(acct)
 
 	pwd = browser.find_element_by_id("pass")
@@ -64,10 +45,11 @@ def crawler_config_and_login_account():
 	submit.click()
 
 	time.sleep(2)
-	for i in range(20):
-		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-		time.sleep(0.5)
-	browser.execute_script("window.scrollTo(0, 0);")
+	# for i in range(5):
+	# 	browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+	# 	time.sleep(0.5)
+	
+	# browser.execute_script("window.scrollTo(0, 0);")
 	#broswer in the main page after login
 	return browser
 
@@ -415,9 +397,9 @@ def output_json(file, ui):
 			data = json.dumps(ui)
 			print(data, file=f)
 
-def reset(browser_1, index):
+def reset(browser_1, index, _no):
 	browser_1.quit()
-	time.sleep(300)
+	time.sleep(60)
 	chrome_options = webdriver.ChromeOptions()
 	prefs = {"profile.default_content_setting_values.notifications" : 2, "credentials_enable_service": False, "profile.password_manager_enabled": False}
 	chrome_options.add_experimental_option("prefs",prefs)
@@ -434,9 +416,9 @@ def reset(browser_1, index):
 	k2 = None
 	#do not use index = 2 here
 	if index % 2 == 0:
-		k1,k2 = get_account_pwd(0)
+		k1, k2 = get_account_pwd(_no-1)
 	else:
-		k1,k2 = get_account_pwd(1)
+		k1, k2 = get_account_pwd(_no)
 	
 	log_info = "The broser was reset. The current user is {}".format(k1) 
 	logger.info(log_info)
@@ -454,21 +436,22 @@ def reset(browser_1, index):
 	submit.click()
 
 	time.sleep(2)
-	for i in range(20):
+	for i in range(10):
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 		time.sleep(0.5)
 	browser.execute_script("window.scrollTo(0, 0);")
 	#broswer in the main page after login
 	return browser
 			
-def task(browser_1):
+def task(browser_1, _no):
 	i = 0
 	err_flag = 0
 	while not queue.is_empty():
 		i += 1
+		#if i % 2 == 0:
 		if i % 77 == 0:
 			logger.info("reset the browser")
-			browser_1 = reset(browser_1, i)
+			browser_1 = reset(browser_1, i, _no)
 
 		if i % 5 == 0:
 			t = random.random()*1000
@@ -485,7 +468,7 @@ def task(browser_1):
 			handle_each_new_friend_in_list(browser_1, next_url, each_info)
 		except Exception as e:
 			err_flag += 1
-			error_url(next_url)
+			error_url(next_url, _no)
 			#close current window
 			browser_1.close()
 			browser_1.switch_to_window(browser_1.window_handles[-1])
@@ -495,7 +478,8 @@ def task(browser_1):
 				sys.exit(1)
 			continue
 		
-		output_json("user_info_1.json", each_info)
+		user_info_file = "user_info_" + str(_no) + ".json"
+		output_json(user_info_file, each_info)
 		each_info = None
 		err_flag = 0
 		
@@ -505,41 +489,69 @@ def task(browser_1):
 	logger.info("job done.")
 	browser_1.quit()
 	
-def load_task(file, start, end):
+def load_task(file, start, end, _no):
 	cached = 0
-	if os.path.exists("backup1.txt"):
-		with open("backup1.txt", 'r') as f:
+	back_file = "backup" + str(_no) + ".txt"
+	if os.path.exists(back_file):
+		with open(back_file, 'r') as f:
 			for each in f:
 				cached = int(each)
+		start = end - cached
 	
-	start = end - cached
-
+	# print(start)
+	# print(end)
+	
 	with open(file, "r") as f:
 		for i, each_url in enumerate(f):
 			if i >= start and i < end:
 				queue.put(each_url)
 				count.increase()
 
-def backup():
-	with open("backup1.txt", "w") as f:
+def backup(_no):
+	back_file = "backup" + str(_no) + ".txt"
+	with open(back_file, "w") as f:
 		print(count.size(), file = f)
 
-def error_url(url):
-	with open("unprocessed_url.txt", "a") as f:
+def error_url(url, _no):
+	unprocess_file = "unprocessed_url_" + str(_no) + ".txt"
+	with open(unprocess_file, "a") as f:
 		print(url, file=f)	
 
-def main():
+def use_virtual_screen():
+	from pyvirtualdisplay import Display
+	display = Display(visible=0, size=(800, 600))
+	display.start()
+	return display
+
+def main(t):
+	#availble task number is 1,3,5
+	task_num = t
 	try:
-		load_task("url_list.txt", config.START1, config.END1)
+		load_task("url_list.txt", config.START1, config.END1, task_num)
+		if config.USE_VIETUAL_SCREEN:
+			use_virtual_screen()
+		k = 1 / 0
+		print(k)
 		browser_1 = crawler_config_and_login_account()
-		task(browser_1)
+		task(browser_1, task_num)
 	except Exception as e:
 		logger.error(e)
-		backup()
-
-	# load_task("unprocessed_url.txt", 0, 3)
-	# browser_1 = crawler_config_and_login_account()
-	# task(browser_1)
+		backup(task_num)
+		print("error")
 
 if __name__ == '__main__':
-	main()
+	t = 1
+	#logger setup
+	FORMAT = '%(asctime)-20s %(name)-5s %(levelname)-10s %(message)s'
+	log_name = 'get_user_url' + str(t) + '.log'
+	logging.basicConfig(filename=log_name,level=logging.INFO, format=FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
+	logger = logging.getLogger("task")
+
+	#data strcuture to store information obtained
+	queue = My_Queue()
+	count = Counter()
+	# friend_set = set()
+	page_bottom = ["medley_header_events", "medley_header_photos", "medley_header_likes"]
+	#size is descided based on https://hur.st/bloomfilter?n=4&p=1.0E-20
+	#bloom_filter = Bloom_Filter(575103503 , 40)
+	main(t)

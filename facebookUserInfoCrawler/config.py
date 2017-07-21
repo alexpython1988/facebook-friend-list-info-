@@ -7,7 +7,7 @@ CHROME_DRIVER_PATH = r"E:\driver\chromedriver.exe"
 URL = "http://www.facebook.com"
 
 START1 = 0
-END1 = 3000000
+END1 = 300000
 
 START2 = 300000
 END2 = 600000
@@ -23,7 +23,7 @@ EMAIL = False
 
 INTO_DB = False
 
-USE_VIETUAL_SCREEN = False
+USE_VIETUAL_SCREEN = True
 
 def get_account_pwd(index):
 	acct = None
