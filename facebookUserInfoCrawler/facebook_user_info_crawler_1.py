@@ -1,3 +1,21 @@
+"""
+The script for scapying the user information from facebook
+
+Required Packages (pip install):
+	selenium
+	BeautifulSoup
+
+Required Driver:
+	chromediver
+
+The facebook accounts and other configuration can be found in accountandpwd.txt and config.py
+If current accounts cannot be used anymore, you have to apply new account
+
+.._github:
+	https://github.com/alexpython1988/facebook-friend-list-info-
+
+author = "Xi Yang"
+"""
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException  
@@ -16,6 +34,17 @@ from config import get_account_pwd
 #from Helper import Bloom_Filter
 
 def crawler_config_and_login_account(_no):
+	"""This fucntion is used to handle facebook login
+	A new chrome browser will be created, and direct to facebook login page. The browser creation require a chrome driver, and the driver location need to be provided
+	The login process will finish with account and password from config file.
+
+	Args:
+		_no: used to identify the index of current running task, the facebook account used chosen from the config file is based on this index  
+
+	Returns:
+            browser will login finished tag, the browser should be ready to process futher scrapy work
+	"""
+	
 	# deactivate notifications from chrome
 	chrome_options = webdriver.ChromeOptions()
 	prefs = {"profile.default_content_setting_values.notifications" : 2, "credentials_enable_service": False, "profile.password_manager_enabled": False}
@@ -38,6 +67,7 @@ def crawler_config_and_login_account(_no):
 	pwd.clear()
 	pwd.send_keys(paswd)
 
+	# wait for page to load
 	time.sleep(0.5)
 
 	submit = browser.find_element_by_xpath("//input[@id='u_0_r']")
@@ -53,6 +83,12 @@ def crawler_config_and_login_account(_no):
 	return browser
 
 def scrapy_friend_list_based_on_account(browser, person_info):
+	"""This function handles the scrapy of user's friend list
+
+	Args:
+		browser: selenium browser that handle the browsing work
+		person_info: identify current facebook account that is under scrapying
+	"""
 	i = 0
 	while(i < 80):
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -115,6 +151,19 @@ def scrapy_friend_list_based_on_account(browser, person_info):
 		person_info["friend list"] = fl
 
 def handle_each_new_friend_in_list(browser, next_url, person_info):
+	"""This function seperates the scrapy work into two parts:
+			1. scrapy friend list
+			2. scrapy user's basic public information
+
+		args:
+			browser: chrome browser for handling web browsing
+			next_url: the url of user that is going to be scrapied
+			person_info: identify current facebook account that is under scrapying
+
+		returns:
+			current browser 
+
+	"""
 	#create a new tab
 	browser.execute_script("window.open('');")
 	browser.switch_to_window(browser.window_handles[-1])
@@ -150,6 +199,13 @@ def scrapy_friend_list_of_friends(browser, person_info):
 	scrapy_friend_list_based_on_account(browser, person_info)
 
 def scrapy_user_info(browser, uid, person_info):
+	"""This functions is organize the scrapy work for user's public information
+
+		args:
+			browser: working env
+			uid: user id used for logging
+			person_info: identify current facebook account that is under scrapying
+	"""
 	#go to about tab
 	browser.execute_script("window.scrollTo(0, 0);")
 	browser.find_element_by_link_text("About").click()
@@ -174,13 +230,21 @@ def scrapy_user_info(browser, uid, person_info):
 				temp[each] = info[each]
 
 	person_info["info"] = temp
-		#process info collected with current user info
 
 	#change to log later for debug or check data purposes
 	info = "get info for {} at {}".format(uid, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 	logger.info(info)
 
 def get_info_of_user(browser, index):
+	"""This function handle the detail of scrapy work for each information sections
+
+		args
+			browser: working env
+			index: identify which section to scrapy
+
+		returns
+			info: obtained information
+	"""
 	info = dict()
 	#webElement.get_attribute("innnerHTML");
 	#obtain html source and add into beautifulsoup for process
@@ -384,6 +448,18 @@ def get_info_of_user(browser, index):
 	return info
 
 def output_json(file, ui): 
+	"""This function handles the output method for obtained information
+
+		args:
+			file: output file
+			ui: ontained user information
+
+		todo:
+			need to finish the other output methods
+				1. send data via email 
+				2. store information into database (mongodb)
+
+	"""
 	#can choose to output as file or email the zipped data to user 
 	if config.EMAIL:
 		#call the email class from send_email.py
@@ -397,6 +473,14 @@ def output_json(file, ui):
 			print(data, file=f)
 
 def reset(browser_1, index, _no):
+	"""This function is aim to reset the current working env with new accouts since facebook does not allow one user to login and search other's information for long time. 
+	The main purpose is to prevent facebook locked the current account
+
+		args:
+			browser_1: working env
+			index: identify swich to which account
+			_no: indetify which acocunt in confid file to use
+	"""
 	browser_1.quit()
 	time.sleep(120)
 	chrome_options = webdriver.ChromeOptions()
@@ -413,6 +497,7 @@ def reset(browser_1, index, _no):
 	k1 = None
 	k2 = None
 	#do not use index = 2 here
+	# switch between two accounts
 	if index % 2 == 0:
 		k1, k2 = get_account_pwd(_no-1)
 	else:
@@ -450,6 +535,7 @@ def task(browser_1, _no):
 		time.sleep(30)
 		i += 1
 		#if i % 2 == 0:
+		#after scrapy 77 times, the account will swith to the other one (mechanism to prevent facebook lock account)
 		if i % 77 == 0:
 			logger.info("reset the browser")
 			try:
@@ -463,7 +549,7 @@ def task(browser_1, _no):
 				browser_1.refresh()
 				logger.error(e)
 				continue
-
+		#facebook will lock the account if request frenquency is too high
 		if i % 6 == 0:
 			t = random.random()*1000
 			logger.info("sleep {}s".format(t))
@@ -533,13 +619,16 @@ def use_virtual_screen():
 
 def main():
 	#availble task number is 1,3,5
-	task_num = 1
+	task_num = 1 
 	logger.info("new task start...")
 	try:
+		#load task garantee that you continue work from where you left last time, prevent redundebnt work
 		load_task("url_list.txt", config.START1, config.END1, task_num)
+		# set USE_VIETUAL_SCREEN in config.py, if set to True, then virtual screen will be used you wont see any browser pop up. Otherwise, you will see the actual process
 		if config.USE_VIETUAL_SCREEN:
 			use_virtual_screen()
 		browser_1 = crawler_config_and_login_account(task_num)
+		#scrapy work
 		task(browser_1, task_num)
 	except Exception as e:
 		logger.error(e)

@@ -23,7 +23,7 @@ EMAIL = False
 
 INTO_DB = False
 
-USE_VIETUAL_SCREEN = True
+USE_VIETUAL_SCREEN = False
 
 def get_account_pwd(index):
 	acct = None
