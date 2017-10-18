@@ -1,8 +1,13 @@
 '''
 change ACCDOUNT and PASSWORD to random before push the project to github
 '''
-CHROME_DRIVER_PATH = r"E:\driver\chromedriver.exe"
-#CHROME_DRIVER_PATH = r"/usr/bin/chromedriver"
+
+import sys
+
+if sys.platform == 'win32' or sys.plateform == 'win64':
+	CHROME_DRIVER_PATH = r"E:\driver\chromedriver.exe"
+else:
+	CHROME_DRIVER_PATH = r"/usr/bin/chromedriver"
 
 URL = "http://www.facebook.com"
 

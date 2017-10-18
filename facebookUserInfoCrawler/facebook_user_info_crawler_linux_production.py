@@ -39,7 +39,8 @@ def crawler_config_and_login_account(_no):
 	The login process will finish with account and password from config file.
 
 	Args:
-		_no: used to identify the index of current running task, the facebook account used chosen from the config file is based on this index  
+		_no: Int 
+			used to identify the index of current running task, the facebook account used chosen from the config file is based on this index  
 
 	Returns:
             browser will login finished tag, the browser should be ready to process futher scrapy work
@@ -70,11 +71,29 @@ def crawler_config_and_login_account(_no):
 	# wait for page to load
 	time.sleep(0.5)
 
-	submit = browser.find_element_by_xpath("//input[@id='u_0_r']")
+	submit = browser.find_element_by_xpath("//input[@value='Log In']")
 	time.sleep(0.5)
 	submit.click()
 
-	time.sleep(2)
+	time.sleep(3)
+	
+	for i in range(5):
+		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+		time.sleep(0.5)
+	browser.execute_script("window.scrollTo(0, 0);")
+
+	#process notification pop up
+	try:
+		browser.find_element_by_xpath("//a[@action='cancel']").click()
+	except:
+		pass
+
+	#process phone pop up
+	try: 
+		browser.find_element_by_xpath("//input[@value='Not now']").click()
+	except:
+		pass
+
 	for i in range(10):
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 		time.sleep(0.5)
@@ -481,6 +500,14 @@ def reset(browser_1, index, _no):
 			index: identify swich to which account
 			_no: indetify which acocunt in confid file to use
 	"""
+	try:
+		bar = browser_1.find_element_by_xpath("//div[@id='userNavigationLabel']")
+		bar.click()
+		time.sleep(1)
+		logout = browser_1.find_element_by_xpath("//*[contains(text(), 'Log Out')]")
+		logout.click()
+	except:
+		pass
 	browser_1.quit()
 	time.sleep(120)
 	chrome_options = webdriver.ChromeOptions()
@@ -500,7 +527,9 @@ def reset(browser_1, index, _no):
 	# switch between two accounts
 	if index % 2 == 0:
 		k1, k2 = get_account_pwd(_no-1)
-	else:
+	elif index % 3 == 0:
+		k1, k2 = get_account_pwd(_no-2)
+	else: 
 		k1, k2 = get_account_pwd(_no)
 	
 	log_info = "The broser was reset. The current user is {}".format(k1) 
@@ -516,9 +545,28 @@ def reset(browser_1, index, _no):
 	pwd.send_keys(k2)
 
 	time.sleep(0.5)
-	submit = browser.find_element_by_xpath("//input[@id='u_0_r']")
+	submit = browser.find_element_by_xpath("//input[@value='Log In']")
 	time.sleep(0.5)
 	submit.click()
+
+	time.sleep(3)
+	
+	for i in range(5):
+		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+		time.sleep(0.5)
+	browser.execute_script("window.scrollTo(0, 0);")
+
+	#process notification pop up
+	try:
+		browser.find_element_by_xpath("//a[@action='cancel']").click()
+	except:
+		pass
+
+	#process phone pop up
+	try: 
+		browser.find_element_by_xpath("//input[@value='Not now']").click()
+	except:
+		pass
 
 	time.sleep(2)
 	for i in range(5):
@@ -579,7 +627,7 @@ def task(browser_1, _no):
 		each_info = None
 		err_flag = 0
 		
-		if i == 155:
+		if i == 231:
 			i = 0
 	
 	logger.info("job done.")
