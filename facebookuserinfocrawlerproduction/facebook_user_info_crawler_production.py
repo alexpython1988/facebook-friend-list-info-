@@ -49,7 +49,7 @@ def crawler_config_and_login_account(_no):
 	"""
 	
 	#set up proxy
-	proxy_url = RequestProxy()
+	proxy_url = RequestProxy().get_valid_proxy()
 	proxy = Proxy()
 	proxy.proxy_type = ProxyType.MANUAL
 	proxy.http_proxy = proxy_url
@@ -524,7 +524,7 @@ def reset(browser_1, index, _no):
 	time.sleep(120)
 
 	#set up proxy
-	proxy_url = RequestProxy()
+	proxy_url = RequestProxy().get_valid_proxy()
 	proxy = Proxy()
 	proxy.proxy_type = ProxyType.MANUAL
 	proxy.http_proxy = proxy_url
@@ -549,9 +549,9 @@ def reset(browser_1, index, _no):
 	#do not use index = 2 here
 	# switch between two accounts
 	if index % 2 == 0:
-		k1, k2 = get_account_pwd(_no-1)
+		k1, k2 = get_account_pwd(_no+1)
 	elif index % 3 == 0:
-		k1, k2 = get_account_pwd(_no-2)
+		k1, k2 = get_account_pwd(_no-1)
 	else: 
 		k1, k2 = get_account_pwd(_no)
 	
@@ -696,7 +696,8 @@ def main():
 		#load task garantee that you continue work from where you left last time, prevent redundebnt work
 		load_task("url_list.txt", config.START1, config.END1, task_num)
 		# set USE_VIETUAL_SCREEN in config.py, if set to True, then virtual screen will be used you wont see any browser pop up. Otherwise, you will see the actual process
-		if config.USE_VIETUAL_SCREEN:
+		if config.USE_VIETUAL_SCREEN_TEST:
+		#if config.USE_VIETUAL_SCREEN_PRODUCTION:	
 			use_virtual_screen()
 		browser_1 = crawler_config_and_login_account(task_num)
 		#scrapy work
@@ -712,7 +713,7 @@ def main():
 if __name__ == '__main__':
 	#logger setup
 	FORMAT = '%(asctime)-20s %(name)-5s %(levelname)-10s %(message)s'
-	logging.basicConfig(filename='get_user_info_1.log',level=logging.INFO, format=FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
+	logging.basicConfig(filename='get_user_info.log',level=logging.INFO, format=FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
 	logger = logging.getLogger("task")
 
 	#data strcuture to store information obtained

@@ -4,24 +4,21 @@ change ACCDOUNT and PASSWORD to random before push the project to github
 
 import sys
 
-if sys.platform == 'win32' or sys.plateform == 'win64':
+if sys.platform == 'win32' or sys.platform == 'win64':
 	CHROME_DRIVER_PATH = r"E:\driver\chromedriver.exe"
 else:
 	CHROME_DRIVER_PATH = r"/usr/bin/chromedriver"
 
 URL = "http://www.facebook.com"
 
-START = 0
-END = 1025748
-
 START1 = 0
-END1 = 299999
+END1 = 300000
 
 START2 = 300000
-END2 = 599999
+END2 = 600000
 
 START3 = 600000
-END3 = 1025748
+END3 = 1025749
 
 ID = "alex"
 
@@ -31,7 +28,8 @@ EMAIL = False
 
 INTO_DB = False
 
-USE_VIETUAL_SCREEN = False
+USE_VIETUAL_SCREEN_PRODUCTION = True
+USE_VIETUAL_SCREEN_TEST = False
 
 def get_account_pwd(index):
 	acct = None
